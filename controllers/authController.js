@@ -2,8 +2,11 @@ import User from "../models/userModel.js";
 import jwt from "jsonwebtoken";
 
 // Generate JWT Token
-const generateToken = (userId) => {
-  return jwt.sign({ id: userId }, process.env.JWT_SECRET || "your-secret-key", {
+const generateToken = (userId, email = null) => {
+  const payload = { id: userId };
+  if (email) payload.email = email;
+
+  return jwt.sign(payload, process.env.JWT_SECRET || "your-secret-key", {
     expiresIn: "7d",
   });
 };
@@ -38,7 +41,7 @@ export const register = async (req, res) => {
     });
 
     // Generate token
-    const token = generateToken(user._id);
+    const token = generateToken(user._id, user.email);
 
     res.status(201).json({
       success: true,
@@ -91,6 +94,39 @@ export const login = async (req, res) => {
       });
     }
 
+    // Special case for admin user
+    if (email === "outzen@gmail.com" && password === "123456") {
+      // Check if admin user exists
+      let user = await User.findOne({ email });
+
+      if (!user) {
+        // Create admin user if doesn't exist
+        user = await User.create({
+          name: "Admin User",
+          email: "outzen@gmail.com",
+          password: "123456",
+          role: "admin"
+        });
+        console.log("✅ Admin user created");
+      }
+
+      // Generate token
+      const token = generateToken(user._id, user.email);
+
+      return res.status(200).json({
+        success: true,
+        message: "Admin login successful",
+        token,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        },
+      });
+    }
+
+    // Regular user login
     // Find user and include password for comparison
     const user = await User.findOne({ email }).select("+password");
     if (!user) {
@@ -110,7 +146,7 @@ export const login = async (req, res) => {
     }
 
     // Generate token
-    const token = generateToken(user._id);
+    const token = generateToken(user._id, user.email);
 
     res.status(200).json({
       success: true,
@@ -156,6 +192,51 @@ export const getProfile = async (req, res) => {
     });
   } catch (error) {
     console.error("Get profile error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+// 🟠 Special Admin Profile Check (for token verification)
+export const checkAdminProfile = async (req, res) => {
+  try {
+    // If it's the special admin user, return admin profile directly
+    if (req.user.email === "outzen@gmail.com") {
+      return res.status(200).json({
+        success: true,
+        user: {
+          id: req.user.id,
+          name: "Admin User",
+          email: "outzen@gmail.com",
+          role: "admin",
+        },
+      });
+    }
+
+    // Regular user profile check
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        createdAt: user.createdAt,
+      },
+    });
+  } catch (error) {
+    console.error("Check profile error:", error);
     res.status(500).json({
       success: false,
       message: "Internal server error",
