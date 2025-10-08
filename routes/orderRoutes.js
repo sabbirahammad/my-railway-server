@@ -29,17 +29,17 @@ router.post("/:orderId/payment-proof", protect, submitPaymentProof);
 router.get("/:orderId/payment-proof", protect, getPaymentProof);
 
 // Admin routes (admin only)
-router.get("/admin/all", protect, adminOnly, getAllOrders);
-router.get("/admin/filtered", protect, adminOnly, getFilteredOrders);
-router.get("/admin/stats", protect, adminOnly, getOrderStats);
-router.get("/admin/export", protect, adminOnly, exportOrders);
-router.get("/admin/delivery-costs", protect, adminOnly, getDeliveryCosts);
-router.post("/admin/delivery-costs", protect, adminOnly, updateDeliveryCosts);
-router.get("/admin/:orderId", protect, adminOnly, getOrderById);
-router.put("/admin/:orderId/status", protect, adminOnly, updateOrderStatus);
-router.put("/admin/:orderId/cancel", protect, adminOnly, cancelOrder);
-router.post("/admin/:orderId/note", protect, adminOnly, addAdminNote);
-router.put("/admin/:orderId/verify-payment", protect, adminOnly, verifyPaymentProof);
-router.post("/admin/bulk-status", protect, adminOnly, bulkUpdateOrderStatus);
+router.get("/admin/all", adminOnly, getAllOrders);
+router.get("/admin/filtered", adminOnly, getFilteredOrders);
+router.get("/admin/stats", adminOnly, getOrderStats);
+router.get("/admin/export", adminOnly, exportOrders);
+router.get("/admin/delivery-costs", adminOnly, getDeliveryCosts);
+router.post("/admin/delivery-costs", adminOnly, updateDeliveryCosts);
+router.get("/admin/:orderId", adminOnly, getOrderById);
+router.put("/admin/:orderId/status", adminOnly, updateOrderStatus);
+router.put("/admin/:orderId/cancel", adminOnly, cancelOrder);
+router.post("/admin/:orderId/note", adminOnly, addAdminNote);
+router.put("/admin/:orderId/verify-payment", adminOnly, verifyPaymentProof);
+router.post("/admin/bulk-status", adminOnly, bulkUpdateOrderStatus);
 
 export default router;
