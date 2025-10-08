@@ -1,5 +1,8 @@
-import express from "express";
+// Load environment variables FIRST
 import dotenv from "dotenv";
+dotenv.config();
+
+import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import morgan from "morgan";
@@ -14,9 +17,6 @@ import userRoutes from "./routes/userRoutes.js"; // ES module import
 import orderRoutes from "./routes/orderRoutes.js"; // ES module import
 import categoryRoutes from "./routes/categoryRoutes.js"; // ES module import
 import deliveryCostRoutes from "./routes/deliveryCostRoutes.js"; // ES module import
-
-// Load environment variables
-dotenv.config();
 
 // Express app init
 const app = express();

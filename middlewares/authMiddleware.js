@@ -13,7 +13,10 @@ export const protect = async (req, res, next) => {
       console.log('🔑 Token received:', token.substring(0, 20) + '...');
 
       // Verify token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+      const jwtSecret = process.env.JWT_SECRET || 'your-secret-key';
+      console.log('🔐 JWT Secret being used (first 20 chars):', jwtSecret.substring(0, 20) + '...');
+      console.log('🔐 JWT Secret length:', jwtSecret.length);
+      const decoded = jwt.verify(token, jwtSecret);
       console.log('✅ Token decoded successfully:', decoded);
 
       // Get user from token

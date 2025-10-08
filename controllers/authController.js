@@ -6,7 +6,10 @@ const generateToken = (userId, email = null) => {
   const payload = { id: userId };
   if (email) payload.email = email;
 
-  return jwt.sign(payload, process.env.JWT_SECRET || "your-secret-key", {
+  const jwtSecret = process.env.JWT_SECRET || "your-secret-key";
+  console.log('🔐 JWT Secret during generation (first 20 chars):', jwtSecret.substring(0, 20) + '...');
+  console.log('🔐 JWT Secret length during generation:', jwtSecret.length);
+  return jwt.sign(payload, jwtSecret, {
     expiresIn: "7d",
   });
 };
