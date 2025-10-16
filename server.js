@@ -17,6 +17,7 @@ import userRoutes from "./routes/userRoutes.js"; // ES module import
 import orderRoutes from "./routes/orderRoutes.js"; // ES module import
 import categoryRoutes from "./routes/categoryRoutes.js"; // ES module import
 import deliveryCostRoutes from "./routes/deliveryCostRoutes.js"; // ES module import
+import heroNavbarRoutes from "./routes/heroNavbarRoutes.js"; // ES module import
 
 // Express app init
 const app = express();
@@ -66,6 +67,7 @@ app.use("/api/v1/products", productRouter);
 app.use("/api/v1/cart", cartRoutes);
 app.use("/api/v1/categories", categoryRoutes);
 app.use("/api/v1/admin/delivery-costs", deliveryCostRoutes);
+app.use("/api/v1/hero-navbar", heroNavbarRoutes);
 
 // Simple root route
 app.get("/", (req, res) => {
