@@ -1,5 +1,5 @@
 import HeroNavbar from "../models/heroNavbarModel.js";
-import { v2 as cloudinary } from "cloudinary";
+// import { v2 as cloudinary } from "cloudinary";
 
 // Get current HeroNavbar image
 export const getHeroNavbarImage = async (req, res) => {
@@ -35,15 +35,24 @@ export const getHeroNavbarImage = async (req, res) => {
 // Upload new HeroNavbar image (replaces existing)
 export const uploadHeroNavbarImage = async (req, res) => {
   try {
-    if (!req.file) {
+    let imageUrl, imageName;
+
+    // Handle file uploads if present (from multipart form data)
+    if (req.file) {
+      imageUrl = req.file.path;
+      imageName = req.file.originalname;
+    }
+    // Handle image URL from JSON body
+    else if (req.body.imageUrl) {
+      imageUrl = req.body.imageUrl;
+      imageName = req.body.imageName || "HeroNavbar Image";
+    }
+    else {
       return res.status(400).json({
         success: false,
-        message: "No image file provided"
+        message: "No image file or URL provided"
       });
     }
-
-    const imageUrl = req.file.path;
-    const imageName = req.file.originalname;
 
     // Find existing HeroNavbar image to delete from Cloudinary
     const existingHeroNavbar = await HeroNavbar.findOne({ isActive: true });
@@ -60,7 +69,7 @@ export const uploadHeroNavbarImage = async (req, res) => {
 
           if (publicId && publicId.trim() !== "") {
             console.log("Deleting old HeroNavbar image from Cloudinary:", publicId);
-            await cloudinary.uploader.destroy(publicId);
+            // await cloudinary.uploader.destroy(publicId);
           }
         }
       } catch (err) {
@@ -139,7 +148,7 @@ export const deleteHeroNavbarImage = async (req, res) => {
 
         if (publicId && publicId.trim() !== "") {
           console.log("Deleting HeroNavbar image from Cloudinary:", publicId);
-          await cloudinary.uploader.destroy(publicId);
+          // await cloudinary.uploader.destroy(publicId);
         }
       }
     } catch (err) {

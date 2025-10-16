@@ -4,7 +4,7 @@ import {
   uploadHeroNavbarImage,
   deleteHeroNavbarImage,
 } from "../controllers/heroNavbarController.js";
-import upload from "../middlewares/multer.js";
+// import upload from "../middlewares/multer.js";
 
 const router = express.Router();
 
@@ -12,7 +12,7 @@ const router = express.Router();
 router.get("/", getHeroNavbarImage);
 
 // Upload new HeroNavbar image (replaces existing)
-router.post("/upload", upload.single("image"), uploadHeroNavbarImage);
+router.post("/upload", uploadHeroNavbarImage);
 
 // Delete HeroNavbar image
 router.delete("/:id", deleteHeroNavbarImage);
