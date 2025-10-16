@@ -24,7 +24,7 @@ import {
 const router = express.Router();
 
 // All routes require authentication
-// router.use(protect);
+router.use();
 
 // Profile routes
 router.get("/profile", getUserProfile);
