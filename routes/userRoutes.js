@@ -1,5 +1,4 @@
 import express from "express";
-import { protect, adminOnly } from "../middlewares/authMiddleware.js";
 import {
   getUserProfile,
   updateUserProfile,
@@ -22,9 +21,6 @@ import {
 } from "../controllers/userController.js";
 
 const router = express.Router();
-router.use();
-
-
 
 // Profile routes
 router.get("/profile", getUserProfile);
@@ -59,3 +55,4 @@ router.get("/dashboard/stats", getDashboardStats);
 router.get("/admin/stats", getUserStats);
 
 export default router;
+
