@@ -23,8 +23,8 @@ const router = express.Router();
 
 // User routes
 router.post("/", protect, createOrder);
-router.get("/user/:orderId", protect, getOrderById); // Users can get their own orders
-router.get("/", protect, getUserOrders); // Users can get all their orders
+router.get("/user/:orderId", getOrderById); // Users can get their own orders
+router.get("/", getUserOrders); // Users can get all their orders
 router.post("/:orderId/payment-proof", submitPaymentProof);
 router.get("/:orderId/payment-proof", getPaymentProof);
 
