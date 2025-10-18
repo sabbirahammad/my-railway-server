@@ -22,11 +22,11 @@ import {
 const router = express.Router();
 
 // User routes
-router.post("/", createOrder);
-router.get("/user/:orderId", getOrderById); // Users can get their own orders
-router.get("/", getUserOrders); // Users can get all their orders
-router.post("/:orderId/payment-proof", submitPaymentProof);
-router.get("/:orderId/payment-proof", getPaymentProof);
+router.post("/", protect, createOrder);
+router.get("/user/:orderId", protect, getOrderById); // Users can get their own orders
+router.get("/", protect, getUserOrders); // Users can get all their orders
+router.post("/:orderId/payment-proof", protect, submitPaymentProof);
+router.get("/:orderId/payment-proof", protect, getPaymentProof);
 
 // Admin routes (admin only)
 router.get("/admin/all", getAllOrders);
