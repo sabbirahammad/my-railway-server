@@ -37,7 +37,9 @@ app.use(cors({
   'http://localhost:5173',       
   'http://localhost:5174',
   'http://localhost:3000',
-  'https://admin-ecommarce.web.app'
+  'https://admin-ecommarce.web.app',
+   https://outzenbd.com/,
+   
 ];
 
     if (allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development') {
