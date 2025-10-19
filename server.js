@@ -34,7 +34,7 @@ app.use(cors({
     if (!origin) return callback(null, true);
 
     const allowedOrigins = [
-      'http://localhost:5173',
+      'https://my-railway-server-production.up.railway.app',
       'http://localhost:5174',
       'http://localhost:5175',
       'http://localhost:3000',
