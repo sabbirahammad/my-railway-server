@@ -33,13 +33,16 @@ app.use(cors({
     // Allow requests with no origin (mobile apps, etc.)
     if (!origin) return callback(null, true);
 
-const allowedOrigins = [
-  'http://localhost:5173',
-  'http://localhost:5174',
-  'http://localhost:3000',
-  'https://admin-ecommarce.web.app',
-  'https://outzen-14c83.web.app'
-];
+    const allowedOrigins = [
+      'https://my-railway-server-production.up.railway.app',
+      'http://localhost:5174',
+      'http://localhost:5175',
+      'http://localhost:3000',
+      'http://127.0.0.1:5173',
+      'http://127.0.0.1:5174',
+      'http://127.0.0.1:5175',
+      'http://127.0.0.1:3000'
+    ];
 
     if (allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development') {
       return callback(null, true);
@@ -134,7 +137,7 @@ app.use('/public', (req, res, next) => {
     'http://localhost:3000',
     'http://127.0.0.1:5173',
     'http://127.0.0.1:5174',
-    'http://127.0.0.1:3000',
+    'http://127.0.0.1:3000'
   ];
 
   if (allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development' || !origin) {
@@ -162,7 +165,7 @@ mongoose
     maxPoolSize: 10, // Maintain up to 10 socket connections
     minPoolSize: 5, // Maintain a minimum of 5 socket connections
     maxIdleTimeMS: 30000, // Close connections after 30s of inactivity
-    bufferCommands: true, // Disable mongoose buffering
+    bufferCommands: false, // Disable mongoose buffering
   })
   .then(() => {
     console.log("✅ MongoDB Connected Successfully");
@@ -222,3 +225,4 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ Server running on port ${PORT}`);
 });
+
