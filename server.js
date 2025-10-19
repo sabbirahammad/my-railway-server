@@ -34,6 +34,9 @@ app.use(cors({
     if (!origin) return callback(null, true);
 
     const allowedOrigins = [
+      'https://admin-ecommarce.web.app',
+      'https://outzenbd.com',
+      'https://sabbirahammad.github.io',
       'https://my-railway-server-production.up.railway.app',
       'http://localhost:5174',
       'http://localhost:5175',
@@ -132,6 +135,10 @@ app.use('/public', (req, res, next) => {
   // Set CORS headers for static files
   const origin = req.headers.origin;
   const allowedOrigins = [
+    'https://admin-ecommarce.web.app',
+    'https://outzenbd.com',
+    'https://sabbirahammad.github.io',
+    'https://my-railway-server-production.up.railway.app',
     'http://localhost:5173',
     'http://localhost:5174',
     'http://localhost:3000',
@@ -160,12 +167,14 @@ app.use('/public', (req, res, next) => {
 mongoose
   .connect(process.env.MONGO_URI, {
     // Optimized connection settings for better performance
-    serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
+    serverSelectionTimeoutMS: 30000, // Increased timeout to 30s for production
     socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
     maxPoolSize: 10, // Maintain up to 10 socket connections
     minPoolSize: 5, // Maintain a minimum of 5 socket connections
     maxIdleTimeMS: 30000, // Close connections after 30s of inactivity
     bufferCommands: false, // Disable mongoose buffering
+    retryWrites: true, // Enable retry writes
+    retryReads: true, // Enable retry reads
   })
   .then(() => {
     console.log("✅ MongoDB Connected Successfully");
@@ -225,4 +234,3 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ Server running on port ${PORT}`);
 });
-
