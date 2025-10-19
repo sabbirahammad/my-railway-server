@@ -38,7 +38,7 @@ const allowedOrigins = [
   'http://localhost:5174',
   'http://localhost:3000',
   'https://admin-ecommarce.web.app',
-  'https://outzenbd.com'
+  'https://outzen-14c83.web.app'
 ];
 
     if (allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development') {
@@ -135,7 +135,6 @@ app.use('/public', (req, res, next) => {
     'http://127.0.0.1:5173',
     'http://127.0.0.1:5174',
     'http://127.0.0.1:3000',
-    'https://outzenbd.com'
   ];
 
   if (allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development' || !origin) {
