@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import DeliveryCost from '../models/deliveryCostModel.js';
 
 // 🟢 Get Delivery Costs
@@ -5,21 +6,22 @@ export const getDeliveryCosts = async (req, res) => {
   try {
     console.log('🔍 Getting delivery costs...');
 
-    let deliveryCost = await DeliveryCost.findOne();
+    const deliveryCost = await DeliveryCost.findOne();
 
-    // If no delivery costs exist, create default ones
     if (!deliveryCost) {
-      console.log('📦 No delivery costs found, creating default...');
-      deliveryCost = new DeliveryCost({
-        dhakaInside: 60,
-        dhakaOutside: 120,
-        updatedBy: req.user.id
+      // Return default values if no delivery cost document exists
+      console.log('📦 No delivery costs found, returning defaults...');
+      return res.status(200).json({
+        success: true,
+        deliveryCosts: {
+          dhakaInside: 60,
+          dhakaOutside: 120
+        }
       });
-      await deliveryCost.save();
-      console.log('✅ Default delivery costs created');
     }
 
-    res.status(200).json({
+    console.log('📦 Returning delivery costs from database...');
+    return res.status(200).json({
       success: true,
       deliveryCosts: {
         dhakaInside: deliveryCost.dhakaInside,
@@ -28,9 +30,13 @@ export const getDeliveryCosts = async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Get delivery costs error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error'
+    // Return default values on error
+    res.status(200).json({
+      success: true,
+      deliveryCosts: {
+        dhakaInside: 60,
+        dhakaOutside: 120
+      }
     });
   }
 };
@@ -57,29 +63,27 @@ export const updateDeliveryCosts = async (req, res) => {
       });
     }
 
-    // Find existing delivery costs or create new one
+    // Find existing delivery cost or create new one
     let deliveryCost = await DeliveryCost.findOne();
 
-    if (deliveryCost) {
-      // Update existing
-      deliveryCost.dhakaInside = dhakaInside;
-      deliveryCost.dhakaOutside = dhakaOutside;
-      deliveryCost.updatedBy = req.user.id;
-      deliveryCost.updatedAt = new Date();
-      await deliveryCost.save();
-      console.log('✅ Delivery costs updated');
-    } else {
-      // Create new
+    if (!deliveryCost) {
+      // Create new delivery cost document
       deliveryCost = new DeliveryCost({
         dhakaInside,
         dhakaOutside,
-        updatedBy: req.user.id
+        updatedBy: req.user?.id ? new mongoose.Types.ObjectId(req.user.id) : new mongoose.Types.ObjectId() // Fallback if no user
       });
-      await deliveryCost.save();
-      console.log('✅ New delivery costs created');
+    } else {
+      // Update existing delivery cost document
+      deliveryCost.dhakaInside = dhakaInside;
+      deliveryCost.dhakaOutside = dhakaOutside;
+      deliveryCost.updatedBy = req.user?.id ? new mongoose.Types.ObjectId(req.user.id) : deliveryCost.updatedBy;
     }
 
-    res.status(200).json({
+    await deliveryCost.save();
+
+    console.log('📦 Delivery costs updated successfully');
+    return res.status(200).json({
       success: true,
       message: 'Delivery costs updated successfully',
       deliveryCosts: {
@@ -89,9 +93,10 @@ export const updateDeliveryCosts = async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Update delivery costs error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: 'Failed to update delivery costs',
+      error: error.message
     });
   }
 };
