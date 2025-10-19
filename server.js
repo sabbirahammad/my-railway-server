@@ -33,13 +33,12 @@ app.use(cors({
     // Allow requests with no origin (mobile apps, etc.)
     if (!origin) return callback(null, true);
 
- const allowedOrigins = [
-  'http://localhost:5173',       
+const allowedOrigins = [
+  'http://localhost:5173',
   'http://localhost:5174',
   'http://localhost:3000',
   'https://admin-ecommarce.web.app',
-   https://outzenbd.com/,
-   
+  'https://outzenbd.com'
 ];
 
     if (allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development') {
