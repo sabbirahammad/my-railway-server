@@ -30,30 +30,16 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' })); // Parse URL-enc
 app.use(cookieParser());   // Parse cookies
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, etc.)
+    // Allow requests with no origin (mobile apps, Postman, curl, etc.)
     if (!origin) return callback(null, true);
 
-    const allowedOrigins = [
-      'https://admin-ecommarce.web.app',
-      'https://outzenbd.com',
-      'https://sabbirahammad.github.io',
-      'https://my-railway-server-production.up.railway.app',
-      'http://localhost:5174',
-      'http://localhost:5175',
-      'http://localhost:3000',
-      'http://127.0.0.1:5173',
-      'http://127.0.0.1:5174',
-      'http://127.0.0.1:5175',
-      'http://127.0.0.1:3000'
-    ];
-
-    if (allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development') {
-      return callback(null, true);
-    }
-
-    callback(new Error('Not allowed by CORS'));
+    // Allow ALL origins - completely permissive
+    return callback(null, true);
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization', 'Cache-Control'],
+  exposedHeaders: ['X-Total-Count', 'X-Page-Count']
 }));
 app.use(morgan("dev"));    // Logger
 app.use(helmet({
@@ -130,29 +116,16 @@ app.get("/metrics", (req, res) => {
   });
 });
 
-// Serve static files (for images) with proper CORS headers
+// Serve static files (for images) with proper CORS headers - Allow ALL origins
 app.use('/public', (req, res, next) => {
-  // Set CORS headers for static files
+  // Set CORS headers for static files - Allow ALL origins
   const origin = req.headers.origin;
-  const allowedOrigins = [
-    'https://admin-ecommarce.web.app',
-    'https://outzenbd.com',
-    'https://sabbirahammad.github.io',
-    'https://my-railway-server-production.up.railway.app',
-    'http://localhost:5173',
-    'http://localhost:5174',
-    'http://localhost:3000',
-    'http://127.0.0.1:5173',
-    'http://127.0.0.1:5174',
-    'http://127.0.0.1:3000'
-  ];
 
-  if (allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development' || !origin) {
-    res.header('Access-Control-Allow-Origin', origin || '*');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  }
+  // Allow ALL origins for static files
+  res.header('Access-Control-Allow-Origin', origin || '*');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control');
 
   // Handle preflight requests
   if (req.method === 'OPTIONS') {
@@ -234,3 +207,4 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ Server running on port ${PORT}`);
 });
+
