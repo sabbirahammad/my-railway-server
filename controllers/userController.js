@@ -40,6 +40,14 @@ export const updateUserProfile = async (req, res) => {
   try {
     const { name, email } = req.body;
 
+    // Validate input
+    if (!name && !email) {
+      return res.status(400).json({
+        success: false,
+        message: "At least one field (name or email) must be provided",
+      });
+    }
+
     const user = await User.findById(req.user.id);
 
     if (!user) {
@@ -51,6 +59,15 @@ export const updateUserProfile = async (req, res) => {
 
     // Check if email is being changed and if it's already taken
     if (email && email !== user.email) {
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid email format",
+        });
+      }
+
       const existingUser = await User.findOne({ email });
       if (existingUser) {
         return res.status(409).json({
@@ -60,8 +77,16 @@ export const updateUserProfile = async (req, res) => {
       }
     }
 
+    // Validate name if provided
+    if (name && name.trim().length < 2) {
+      return res.status(400).json({
+        success: false,
+        message: "Name must be at least 2 characters long",
+      });
+    }
+
     // Update user
-    user.name = name || user.name;
+    user.name = name ? name.trim() : user.name;
     user.email = email || user.email;
 
     await user.save();
@@ -78,6 +103,33 @@ export const updateUserProfile = async (req, res) => {
     });
   } catch (error) {
     console.error("Update profile error:", error);
+
+    // Handle mongoose validation errors
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: "Validation error",
+        errors: messages,
+      });
+    }
+
+    // Handle duplicate key errors
+    if (error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: "Email already exists",
+      });
+    }
+
+    // Handle cast errors (invalid ObjectId)
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid user ID",
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: "Internal server error",
@@ -229,16 +281,50 @@ export const addAddress = async (req, res) => {
   try {
     const { type, fullName, phone, address, city, postalCode, country, isDefault } = req.body;
 
+    // Validate required fields
+    if (!type || !fullName || !phone || !address || !city || !postalCode) {
+      return res.status(400).json({
+        success: false,
+        message: "All required fields must be provided",
+      });
+    }
+
+    // Validate type enum
+    if (!["home", "work", "other"].includes(type)) {
+      return res.status(400).json({
+        success: false,
+        message: "Type must be home, work, or other",
+      });
+    }
+
+    // Validate phone number format (basic validation)
+    const phoneRegex = /^[\+]?[0-9\s\-\(\)]{10,15}$/;
+    if (!phoneRegex.test(phone.trim())) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a valid phone number",
+      });
+    }
+
+    // Validate postal code (very flexible validation for Bangladesh)
+    // For now, just check if postal code exists and has content
+    if (!postalCode || postalCode.trim().length < 2) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a postal code",
+      });
+    }
+
     const newAddress = new Address({
       user: req.user.id,
       type,
-      fullName,
-      phone,
-      address,
-      city,
-      postalCode,
-      country,
-      isDefault,
+      fullName: fullName.trim(),
+      phone: phone.trim(),
+      address: address.trim(),
+      city: city.trim(),
+      postalCode: postalCode.trim(),
+      country: country || "Bangladesh",
+      isDefault: isDefault || false,
     });
 
     await newAddress.save();
@@ -250,6 +336,33 @@ export const addAddress = async (req, res) => {
     });
   } catch (error) {
     console.error("Add address error:", error);
+
+    // Handle mongoose validation errors
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: "Validation error",
+        errors: messages,
+      });
+    }
+
+    // Handle duplicate key errors
+    if (error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: "Duplicate address entry",
+      });
+    }
+
+    // Handle cast errors (invalid ObjectId)
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid user ID",
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: "Internal server error",

@@ -1,12 +1,89 @@
 import Product from "../models/productModel.js";
 import { v2 as cloudinary } from "cloudinary";
 
-// সব প্রোডাক্ট fetch
+// Cache cleanup function
+export const clearProductCache = () => {
+  productCache.clear();
+};
+
+// Get cache stats for monitoring
+export const getCacheStats = () => {
+  return {
+    size: productCache.size,
+    maxAge: CACHE_TTL,
+    keys: Array.from(productCache.keys())
+  };
+};
+
+// Simple in-memory cache for products (in production, use Redis)
+const productCache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+// সব প্রোডাক্ট fetch with pagination and caching
 export const getAllProducts = async (req, res) => {
   try {
-    const products = await Product.find({}).lean(); // lean() use করলাম
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const category = req.query.category;
+    const search = req.query.search;
+    const sortBy = req.query.sortBy || 'createdAt';
+    const sortOrder = req.query.sortOrder === 'asc' ? 1 : -1;
+
+    // Create cache key
+    const cacheKey = `products_${page}_${limit}_${category || 'all'}_${search || 'none'}_${sortBy}_${sortOrder}`;
+
+    // Check cache first
+    const cached = productCache.get(cacheKey);
+    if (cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
+      return res.json(cached.data);
+    }
+
+    // Build query
+    let query = {};
+
+    if (category && category !== 'all') {
+      query.category = category;
+    }
+
+    if (search) {
+      query.$text = { $search: search };
+    }
+
+    // Build sort object
+    let sort = {};
+    switch (sortBy) {
+      case 'price':
+        sort.price = sortOrder;
+        break;
+      case 'name':
+        sort.name = sortOrder;
+        break;
+      case 'rating':
+        sort.rating = sortOrder;
+        break;
+      case 'newest':
+        sort.createdAt = -1;
+        break;
+      case 'oldest':
+        sort.createdAt = 1;
+        break;
+      default:
+        sort.createdAt = -1;
+    }
+
+    const skip = (page - 1) * limit;
+
+    // Execute query with lean() for better performance
+    const products = await Product.find(query)
+      .sort(sort)
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    const total = await Product.countDocuments(query);
+
     const formattedProducts = products.map(p => ({
-      id: p._id.toString(), // _id → id
+      id: p._id.toString(),
       name: p.name,
       price: p.price,
       category: p.category,
@@ -15,8 +92,29 @@ export const getAllProducts = async (req, res) => {
       isTopProduct: p.isTopProduct,
       description: p.description,
       oldPrice: p.oldPrice || null,
+      rating: p.rating,
+      createdAt: p.createdAt,
     }));
-    res.json({ success: true, products: formattedProducts });
+
+    const result = {
+      success: true,
+      products: formattedProducts,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        totalProducts: total,
+        hasNext: page * limit < total,
+        hasPrev: page > 1
+      }
+    };
+
+    // Cache the result
+    productCache.set(cacheKey, {
+      data: result,
+      timestamp: Date.now()
+    });
+
+    res.json(result);
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -61,12 +159,21 @@ export const createProduct = async (req, res) => {
       imageUrls = [...imageUrls, ...req.body.images.filter(img => img && img.trim() !== '')];
     }
 
-    const product = new Product({
+    // Convert price to number
+    const productData = {
       ...req.body,
       images: imageUrls,
-    });
+      price: req.body.price ? parseFloat(req.body.price) : 0,
+      oldPrice: req.body.oldPrice ? parseFloat(req.body.oldPrice) : null,
+      rating: req.body.rating ? parseFloat(req.body.rating) : 0,
+    };
 
+    const product = new Product(productData);
     const saved = await product.save();
+
+    // Clear cache when new product is created
+    productCache.clear();
+
     const formatted = {
       id: saved._id.toString(),
       name: saved.name,
@@ -77,6 +184,7 @@ export const createProduct = async (req, res) => {
       isTopProduct: saved.isTopProduct,
       description: saved.description,
       oldPrice: saved.oldPrice || null,
+      rating: saved.rating,
     };
 
     res.status(201).json({ success: true, product: formatted });
@@ -94,8 +202,22 @@ export const updateProduct = async (req, res) => {
       updateData.images = req.files.map(file => file.path);
     }
 
+    // Convert price fields to numbers
+    if (req.body.price !== undefined) {
+      updateData.price = parseFloat(req.body.price);
+    }
+    if (req.body.oldPrice !== undefined) {
+      updateData.oldPrice = req.body.oldPrice ? parseFloat(req.body.oldPrice) : null;
+    }
+    if (req.body.rating !== undefined) {
+      updateData.rating = parseFloat(req.body.rating);
+    }
+
     const product = await Product.findByIdAndUpdate(req.params.id, updateData, { new: true }).lean();
     if (!product) return res.status(404).json({ success: false, message: "Product not found" });
+
+    // Clear cache when product is updated
+    productCache.clear();
 
     const formatted = {
       id: product._id.toString(),
@@ -107,6 +229,7 @@ export const updateProduct = async (req, res) => {
       isTopProduct: product.isTopProduct,
       description: product.description,
       oldPrice: product.oldPrice || null,
+      rating: product.rating,
     };
 
     res.json({ success: true, product: formatted });
@@ -151,55 +274,81 @@ export const deleteProduct = async (req, res) => {
   }
 };
 
-// 🟡 Get Product Statistics (Admin)
+// 🟡 Get Product Statistics (Admin) - Optimized with single aggregation
 export const getProductStats = async (req, res) => {
   try {
-    const totalProducts = await Product.countDocuments();
-    const trendingProducts = await Product.countDocuments({ isTrending: true });
-    const topProducts = await Product.countDocuments({ isTopProduct: true });
-
-    // Get product counts by category
-    const categoryStats = await Product.aggregate([
-      {
-        $group: {
-          _id: "$category",
-          count: { $sum: 1 }
-        }
-      },
-      {
-        $sort: { count: -1 }
-      }
-    ]);
-
-    // Get average price
-    const priceStats = await Product.aggregate([
-      {
-        $group: {
-          _id: null,
-          averagePrice: { $avg: "$price" },
-          minPrice: { $min: "$price" },
-          maxPrice: { $max: "$price" }
-        }
-      }
-    ]);
-
-    // Recent products (last 30 days)
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const recentProducts = await Product.countDocuments({
-      createdAt: { $gte: thirtyDaysAgo }
-    });
+    // Single aggregation pipeline for all stats
+    const stats = await Product.aggregate([
+      {
+        $facet: {
+          // Basic counts
+          counts: [
+            { $count: "totalProducts" }
+          ],
+          // Trending and top products
+          trending: [
+            { $match: { isTrending: true } },
+            { $count: "trendingProducts" }
+          ],
+          topProducts: [
+            { $match: { isTopProduct: true } },
+            { $count: "topProducts" }
+          ],
+          // Recent products
+          recent: [
+            { $match: { createdAt: { $gte: thirtyDaysAgo } } },
+            { $count: "recentProducts" }
+          ],
+          // Category statistics
+          categoryStats: [
+            {
+              $group: {
+                _id: "$category",
+                count: { $sum: 1 }
+              }
+            },
+            { $sort: { count: -1 } }
+          ],
+          // Price statistics
+          priceStats: [
+            {
+              $group: {
+                _id: null,
+                averagePrice: { $avg: "$price" },
+                minPrice: { $min: "$price" },
+                maxPrice: { $max: "$price" }
+              }
+            }
+          ],
+          // Rating statistics
+          ratingStats: [
+            {
+              $group: {
+                _id: null,
+                averageRating: { $avg: "$rating" },
+                totalRated: { $sum: 1 }
+              }
+            }
+          ]
+        }
+      }
+    ]);
+
+    const result = stats[0] || {};
 
     res.status(200).json({
       success: true,
       stats: {
-        totalProducts,
-        trendingProducts,
-        topProducts,
-        recentProducts,
-        categoryStats,
-        priceStats: priceStats[0] || { averagePrice: 0, minPrice: 0, maxPrice: 0 }
+        totalProducts: result.counts?.[0]?.totalProducts || 0,
+        trendingProducts: result.trending?.[0]?.trendingProducts || 0,
+        topProducts: result.topProducts?.[0]?.topProducts || 0,
+        recentProducts: result.recent?.[0]?.recentProducts || 0,
+        categoryStats: result.categoryStats || [],
+        priceStats: result.priceStats?.[0] || { averagePrice: 0, minPrice: 0, maxPrice: 0 },
+        ratingStats: result.ratingStats?.[0] || { averageRating: 0, totalRated: 0 }
       }
     });
   } catch (error) {

@@ -34,8 +34,7 @@ const addressSchema = new mongoose.Schema(
     },
     postalCode: {
       type: String,
-      required: [true, "Postal code is required"],
-      trim: true,
+     
     },
     country: {
       type: String,
@@ -57,10 +56,18 @@ const addressSchema = new mongoose.Schema(
 // Ensure only one default address per user
 addressSchema.pre("save", async function (next) {
   if (this.isDefault) {
-    await this.constructor.updateMany(
-      { user: this.user, _id: { $ne: this._id } },
-      { isDefault: false }
-    );
+    try {
+      // Only update if user exists and this is not a new document
+      if (this.user && this._id) {
+        await this.constructor.updateMany(
+          { user: this.user, _id: { $ne: this._id } },
+          { isDefault: false }
+        );
+      }
+    } catch (error) {
+      console.error("Error in address pre-save hook:", error);
+      // Don't fail the entire save operation, just log the error
+    }
   }
   next();
 });

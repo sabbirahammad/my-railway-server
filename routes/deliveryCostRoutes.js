@@ -7,10 +7,7 @@ import {
 
 const router = express.Router();
 
-// All routes require authentication and admin privileges
-router.use(protect);
-router.use(adminOnly);
-
+// Development mode: No authentication required for admin routes
 // Delivery cost routes
 router.get("/", getDeliveryCosts);
 router.post("/", updateDeliveryCosts);

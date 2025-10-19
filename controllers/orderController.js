@@ -237,7 +237,7 @@ export const getPaymentProof = async (req, res) => {
     }
 
     // Check if user owns the order or is admin
-    if (order.user.toString() !== req.user.id && req.user.role !== "admin") {
+    if (!req.user || !req.user.id || (order.user.toString() !== req.user.id && req.user.role !== "admin")) {
       return res.status(403).json({
         success: false,
         message: "Not authorized to view payment proof for this order",
@@ -419,7 +419,7 @@ export const getOrderById = async (req, res) => {
     }
 
     // Check if user owns the order or is admin
-    if (!order.user || (order.user._id.toString() !== req.user.id && req.user.role !== "admin")) {
+    if (!req.user || !req.user.id || !order.user || !order.user._id || (order.user._id.toString() !== req.user.id && req.user.role !== "admin")) {
       return res.status(403).json({
         success: false,
         message: "Not authorized to view this order",

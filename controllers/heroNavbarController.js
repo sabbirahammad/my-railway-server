@@ -35,22 +35,41 @@ export const getHeroNavbarImage = async (req, res) => {
 // Upload new HeroNavbar image (replaces existing)
 export const uploadHeroNavbarImage = async (req, res) => {
   try {
+    console.log("Upload request received:", {
+      file: req.file,
+      body: req.body,
+      headers: req.headers['content-type']
+    });
+
     let imageUrl, imageName;
 
     // Handle file uploads if present (from multipart form data)
     if (req.file) {
+      console.log("Processing file upload:", req.file.originalname);
       imageUrl = req.file.path;
       imageName = req.file.originalname;
     }
     // Handle image URL from JSON body
     else if (req.body.imageUrl) {
+      console.log("Processing image URL:", req.body.imageUrl);
       imageUrl = req.body.imageUrl;
       imageName = req.body.imageName || "HeroNavbar Image";
     }
     else {
+      console.log("No file or URL provided");
       return res.status(400).json({
         success: false,
         message: "No image file or URL provided"
+      });
+    }
+
+    console.log("Image URL and name:", { imageUrl, imageName });
+
+    // Validate file size (5MB limit from multer config)
+    if (req.file && req.file.size > 5 * 1024 * 1024) {
+      return res.status(400).json({
+        success: false,
+        message: "File size too large. Maximum size is 5MB"
       });
     }
 

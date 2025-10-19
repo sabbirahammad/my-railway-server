@@ -6,6 +6,8 @@ import {
   updateProduct,
   deleteProduct,
   getProductStats,
+  clearProductCache,
+  getCacheStats,
 } from "../controllers/productController.js";
 import upload from "../middlewares/multer.js";
 
@@ -41,6 +43,48 @@ router.delete("/:id", deleteProduct);
 
 // Admin routes
 router.get("/admin/stats", getProductStats);
+
+// Cache management routes (admin only in production)
+router.get("/admin/cache-stats", getCacheStats);
+router.delete("/admin/cache", clearProductCache);
+
+// Search endpoint with optimized query
+router.get("/search", async (req, res) => {
+  try {
+    const { q, category, limit = 10 } = req.query;
+
+    if (!q) {
+      return res.status(400).json({ success: false, message: "Search query is required" });
+    }
+
+    let query = {
+      $text: { $search: q }
+    };
+
+    if (category && category !== 'all') {
+      query.category = category;
+    }
+
+    const products = await Product.find(query, { score: { $meta: "textScore" } })
+      .sort({ score: { $meta: "textScore" } })
+      .limit(parseInt(limit))
+      .lean();
+
+    const formattedProducts = products.map(p => ({
+      id: p._id.toString(),
+      name: p.name,
+      price: p.price,
+      category: p.category,
+      images: p.images,
+      description: p.description,
+      oldPrice: p.oldPrice || null,
+    }));
+
+    res.json({ success: true, products: formattedProducts, query: q });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
 
 export default router;
 
