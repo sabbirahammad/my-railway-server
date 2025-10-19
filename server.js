@@ -134,7 +134,8 @@ app.use('/public', (req, res, next) => {
     'http://localhost:3000',
     'http://127.0.0.1:5173',
     'http://127.0.0.1:5174',
-    'http://127.0.0.1:3000'
+    'http://127.0.0.1:3000',
+    'https://outzenbd.com'
   ];
 
   if (allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development' || !origin) {
@@ -162,7 +163,7 @@ mongoose
     maxPoolSize: 10, // Maintain up to 10 socket connections
     minPoolSize: 5, // Maintain a minimum of 5 socket connections
     maxIdleTimeMS: 30000, // Close connections after 30s of inactivity
-    bufferCommands: false, // Disable mongoose buffering
+    bufferCommands: true, // Disable mongoose buffering
   })
   .then(() => {
     console.log("✅ MongoDB Connected Successfully");
