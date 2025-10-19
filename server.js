@@ -33,16 +33,12 @@ app.use(cors({
     // Allow requests with no origin (mobile apps, etc.)
     if (!origin) return callback(null, true);
 
-    const allowedOrigins = [
-      'https://my-railway-server-production.up.railway.app',
-      'http://localhost:5174',
-      'http://localhost:5175',
-      'http://localhost:3000',
-      'http://127.0.0.1:5173',
-      'http://127.0.0.1:5174',
-      'http://127.0.0.1:5175',
-      'http://127.0.0.1:3000'
-    ];
+ const allowedOrigins = [
+  'http://localhost:5173',       
+  'http://localhost:5174',
+  'http://localhost:3000',
+  'https://admin-ecommarce.web.app'
+];
 
     if (allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development') {
       return callback(null, true);
