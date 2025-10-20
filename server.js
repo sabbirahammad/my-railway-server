@@ -2,6 +2,9 @@
 import dotenv from "dotenv";
 dotenv.config();
 
+// Initialize Cloudinary configuration
+import cloudinary from "./config/cloudinary.js";
+
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
@@ -185,6 +188,16 @@ app.use("/api/v1/cart", cartRoutes);
 app.use("/api/v1/categories", categoryRoutes);
 app.use("/api/v1/admin/delivery-costs", deliveryCostRoutes);
 app.use("/api/v1/hero-navbar", heroNavbarRoutes);
+
+// Test route for products
+app.get("/api/v1/products/test", (req, res) => {
+  res.json({ success: true, message: "Product routes are working!" });
+});
+
+// Test route for hero-navbar
+app.get("/api/v1/hero-navbar/test", (req, res) => {
+  res.json({ success: true, message: "HeroNavbar routes are working!" });
+});
 
 // Simple root route
 app.get("/", (req, res) => {
