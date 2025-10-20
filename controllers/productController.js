@@ -1,20 +1,21 @@
 import Product from "../models/productModel.js";
 import { v2 as cloudinary } from "cloudinary";
-import multer from "multer";
 
 // Helper function to upload image to Cloudinary
 const uploadToCloudinary = async (filePath, folder = "ecommerce_products") => {
   try {
+    console.log("Starting Cloudinary upload for:", filePath);
     const result = await cloudinary.uploader.upload(filePath, {
       folder: folder,
       resource_type: "auto",
       quality: "auto",
       format: "webp"
     });
+    console.log("Cloudinary upload successful:", result.secure_url);
     return result.secure_url;
   } catch (error) {
     console.error("Cloudinary upload error:", error);
-    throw new Error("Failed to upload image to Cloudinary");
+    throw new Error(`Failed to upload image to Cloudinary: ${error.message}`);
   }
 };
 
@@ -198,17 +199,32 @@ export const createProduct = async (req, res) => {
         try {
           const cloudinaryUrl = await uploadToCloudinary(file.path, "ecommerce_products");
           imageUrls.push(cloudinaryUrl);
+          console.log("Successfully uploaded to Cloudinary:", cloudinaryUrl);
 
           // Delete local file after successful upload
           const fs = await import('fs');
           if (fs.existsSync(file.path)) {
             fs.unlinkSync(file.path);
+            console.log("Local file deleted:", file.path);
           }
         } catch (uploadError) {
           console.error("Error uploading file to Cloudinary:", file.originalname, uploadError);
-          // Continue with other files even if one fails
+          // Delete local file even if upload fails
+          const fs = await import('fs');
+          if (fs.existsSync(file.path)) {
+            fs.unlinkSync(file.path);
+          }
+          // Don't add failed uploads to the imageUrls array
         }
       }
+    }
+
+    // Ensure we have at least one image URL
+    if (imageUrls.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Failed to upload images to Cloudinary. Please try again."
+      });
     }
 
     // Handle images from JSON body (when no files are uploaded)
@@ -450,4 +466,5 @@ export const getProductStats = async (req, res) => {
     });
   }
 };
+
 
